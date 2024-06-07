@@ -656,7 +656,7 @@ impl<'index> Updater<'index> {
           }
           let data = Value::Array(inscription_txs);
           let mut reorg = false;
-
+          log::info!("Todo push inscription_txs {} size",tx_count);
           loop {
               match self.index.block_hash(self.height.checked_sub(1))? {
                 Some(index_prev_blockhash) => {
@@ -715,7 +715,6 @@ impl<'index> Updater<'index> {
           }
           let data = Value::Array(rune_txs);
           let mut reorg = false;
-
           loop {
               match self.index.block_hash(self.height.checked_sub(1))? {
                 Some(index_prev_blockhash) => {
