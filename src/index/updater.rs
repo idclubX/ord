@@ -6,6 +6,7 @@ use {
   tokio::sync::mpsc::{error::TryRecvError, Receiver, Sender},
   serde_json::{Value, json},
   ureq::{Error, Response},
+  std::thread,
   std::thread::sleep,
 };
 
@@ -256,10 +257,11 @@ impl<'index> Updater<'index> {
     // Since we are already requesting blocks on a separate thread, and we don't want to break if anything
     // else runs a request, we keep this to 12.
     let parallel_requests: usize = settings.bitcoin_rpc_limit() as usize;
-
-    thread::spawn(move || {
+    let builder = thread::Builder::new().name("spawn-fetcher".to_string());
+    builder.spawn(move || {
       let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
+        .thread_name("fetch-missing-outpoints")
         .build()
         .unwrap();
       rt.block_on(async move {
@@ -277,6 +279,9 @@ impl<'index> Updater<'index> {
             };
             outpoints.push(outpoint);
           }
+          let current_th = thread::current();
+          let thread_name = current_th.name().unwrap_or("unknown_thread");
+          log::info!("Fetching {} missing outpoints size {}",thread_name,outpoints.len());
           // Break outpoints into chunks for parallel requests
           let chunk_size = (outpoints.len() / parallel_requests) + 1;
           let mut futs = Vec::with_capacity(parallel_requests);
@@ -349,6 +354,7 @@ impl<'index> Updater<'index> {
         inscription_txs = Some(Vec::new());
       }
 
+      log::info!("Send all missing input outpoints to be fetched right away value_cache size {}",value_cache.len());
       // Send all missing input outpoints to be fetched right away
       let txids = block
         .txdata
@@ -380,6 +386,7 @@ impl<'index> Updater<'index> {
           outpoint_sender.blocking_send(prev_output)?;
         }
       }
+      log::info!("Send all missing input outpoints finished");
     }
 
     let mut content_type_to_count = wtx.open_table(CONTENT_TYPE_TO_COUNT)?;
