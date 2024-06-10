@@ -323,7 +323,7 @@ impl<'index> Updater<'index> {
     value_cache: &mut HashMap<OutPoint, u64>,
   ) -> Result<()> {
     Reorg::detect_reorg(&block, self.height, self.index)?;
-
+    
     let start = Instant::now();
     let mut sat_ranges_written = 0;
     let mut outputs_in_block = 0;
@@ -435,6 +435,11 @@ impl<'index> Updater<'index> {
 
     let home_inscription_count = home_inscriptions.len()?;
 
+    let txid_to_index = block.txdata.iter()  
+      .enumerate()  
+      .map(|(index, (_, txid))| (txid.clone(), index))   
+      .collect();
+
     let mut inscription_updater = InscriptionUpdater {
       blessed_inscription_count,
       chain: self.index.settings.chain(),
@@ -464,6 +469,7 @@ impl<'index> Updater<'index> {
       value_cache,
       value_receiver,
       index: self.index,
+      txid_to_index: &txid_to_index
     };
 
     if self.index.index_sats {

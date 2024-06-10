@@ -67,6 +67,7 @@ pub(super) struct InscriptionUpdater<'a, 'tx> {
   pub(super) value_cache: &'a mut HashMap<OutPoint, u64>,
   pub(super) value_receiver: &'a mut Receiver<u64>,
   pub(super) index: &'a Index,
+  pub(super) txid_to_index: &'a HashMap<Txid, usize>
 }
 
 impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
@@ -578,7 +579,7 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
   fn append_inscription_tx(&mut self, inscription_txs: &mut Vec<Value>, flotsam: Flotsam) -> Result {
     let inscription_id = flotsam.inscription_id;
     let origin = flotsam.origin;
-
+  
     let seq_number = self.id_to_sequence_number.get(inscription_id.store())?.unwrap().value();
     let entry = self.sequence_number_to_entry.get(seq_number)?.map(|_entry| {InscriptionEntry::load(_entry.value())}).unwrap();
 
@@ -633,6 +634,7 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
         "reinscription": reinscription,
         "location": satpoint.to_string(),
         "block": self.height,
+        "index": self.txid_to_index.get(&(inscription_id.txid)).unwrap(),
         "entry": json!({
           "fee": entry.fee,
           "height": entry.height,
