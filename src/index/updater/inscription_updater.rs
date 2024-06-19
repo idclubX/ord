@@ -634,7 +634,7 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
         "reinscription": reinscription,
         "location": satpoint.to_string(),
         "block": self.height,
-        "index": self.txid_to_index.get(&(inscription_id.txid)).unwrap(),
+        "index": self.txid_to_index.get(&(satpoint.outpoint.txid)).unwrap(),
         "entry": json!({
           "fee": entry.fee,
           "height": entry.height,
