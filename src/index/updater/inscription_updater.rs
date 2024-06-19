@@ -626,6 +626,11 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
       _ => (false, false, false, false),
     };
 
+    let tx_index = match self.txid_to_index.get(&(satpoint.outpoint.txid)) {
+      Some(index) => *index as i32,
+      None => -1,
+    };
+
     let data = json!({
         "inscription_id": inscription_id.to_string(),
         "cursed":  cursed,
@@ -634,7 +639,7 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
         "reinscription": reinscription,
         "location": satpoint.to_string(),
         "block": self.height,
-        "index": self.txid_to_index.get(&(satpoint.outpoint.txid)).unwrap(),
+        "index": tx_index,
         "entry": json!({
           "fee": entry.fee,
           "height": entry.height,
