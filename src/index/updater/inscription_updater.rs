@@ -1,6 +1,7 @@
 use super::*;
 use serde_json::{Value, json, to_string};
 use base64::{Engine as _, engine::general_purpose};
+use templates::sat;
 #[derive(Debug, PartialEq, Copy, Clone)]
 enum Curse {
   DuplicateField,
@@ -349,7 +350,7 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
         _ => new_satpoint,
       };
 
-      self.update_inscription_location(input_sat_ranges, flotsam, new_satpoint, inscription_txs)?;
+      self.update_inscription_location(input_sat_ranges, flotsam, new_satpoint, inscription_txs,tx)?;
     }
 
     if is_coinbase {
@@ -358,7 +359,7 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
           outpoint: OutPoint::null(),
           offset: self.lost_sats + flotsam.offset - output_value,
         };
-        self.update_inscription_location(input_sat_ranges, flotsam, new_satpoint, inscription_txs)?;
+        self.update_inscription_location(input_sat_ranges, flotsam, new_satpoint, inscription_txs,tx)?;
       }
       self.lost_sats += self.reward - output_value;
       Ok(())
@@ -397,6 +398,7 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
     flotsam: Flotsam,
     new_satpoint: SatPoint,
     inscription_txs: &mut Option<Vec<Value>>,
+    tx: &Transaction
   ) -> Result {
     let flotsam_cp = flotsam.clone();
     let inscription_id = flotsam.inscription_id;
@@ -570,13 +572,13 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
       .insert(sequence_number, &satpoint)?;
 
     if let Some(inscription_txs) = inscription_txs {
-      self.append_inscription_tx(inscription_txs, flotsam_cp)?;
+      self.append_inscription_tx(inscription_txs, flotsam_cp,tx)?;
     }
 
     Ok(())
   }
 
-  fn append_inscription_tx(&mut self, inscription_txs: &mut Vec<Value>, flotsam: Flotsam) -> Result {
+  fn append_inscription_tx(&mut self, inscription_txs: &mut Vec<Value>, flotsam: Flotsam,tx: &Transaction) -> Result {
     let inscription_id = flotsam.inscription_id;
     let origin = flotsam.origin;
   
@@ -584,6 +586,13 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
     let entry = self.sequence_number_to_entry.get(seq_number)?.map(|_entry| {InscriptionEntry::load(_entry.value())}).unwrap();
 
     let satpoint = self.sequence_number_to_satpoint.get(seq_number)?.map(|_entry| {SatPoint::load(*_entry.value())}).unwrap();
+
+    let current_owner = if tx.txid() == satpoint.outpoint.txid {
+        Address::from_script(&tx.output[satpoint.outpoint.vout as usize].script_pubkey, Network::Bitcoin).unwrap().to_string()
+    }else{
+      "".to_string()
+    };
+  
 
     // only push the inscribe and first transfer transaction to server to reduce io costs.
     if self.index.settings.push_only_first_transfer() {
@@ -640,6 +649,7 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
         "location": satpoint.to_string(),
         "block": self.height,
         "index": tx_index,
+        "current_owner": current_owner,
         "entry": json!({
           "fee": entry.fee,
           "height": entry.height,
