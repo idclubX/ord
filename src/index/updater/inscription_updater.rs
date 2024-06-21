@@ -588,11 +588,17 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
     let satpoint = self.sequence_number_to_satpoint.get(seq_number)?.map(|_entry| {SatPoint::load(*_entry.value())}).unwrap();
 
     let current_owner = if tx.txid() == satpoint.outpoint.txid {
-        Address::from_script(&tx.output[satpoint.outpoint.vout as usize].script_pubkey, Network::Bitcoin).unwrap().to_string()
+        Address::from_script(&tx.output[satpoint.outpoint.vout as usize].script_pubkey, self.index.settings.chain().network()).unwrap().to_string()
     }else{
       "".to_string()
     };
   
+
+    let out_value: i64 = if tx.txid() == satpoint.outpoint.txid {
+      tx.output[satpoint.outpoint.vout as usize].value as i64
+    }else{
+      -1
+    };
 
     // only push the inscribe and first transfer transaction to server to reduce io costs.
     if self.index.settings.push_only_first_transfer() {
@@ -675,7 +681,8 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
           _ => "{}".to_owned(),
         },
         "metaprotocol": current_inscription.metaprotocol(),
-        "old_satpoint": _old_satpoint
+        "old_satpoint": _old_satpoint,
+        "out_value":out_value
     });
     inscription_txs.push(data);
 
