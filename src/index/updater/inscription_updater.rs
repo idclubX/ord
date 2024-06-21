@@ -632,8 +632,10 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
     }).unwrap();
 
     let mut content: String = "".to_owned();
+    let mut content_size: u64 = 0;
     if let Some(_body) = current_inscription.clone().into_body() {
       content = general_purpose::STANDARD.encode(&_body);
+      content_size = _body.len() as u64;
     }
 
     let (cursed, vindicated, unbound, reinscription) = match origin {
@@ -654,6 +656,7 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
         "reinscription": reinscription,
         "location": satpoint.to_string(),
         "block": self.height,
+        "block_time": self.timestamp,
         "index": tx_index,
         "current_owner": current_owner,
         "entry": json!({
@@ -676,6 +679,7 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
         }),
         "content_type": current_inscription.content_type(),
         "content": content,
+        "content_size": content_size,
         "metadata":  match current_inscription.metadata() {
           Some(meta) => to_string(&meta)?,
           _ => "{}".to_owned(),
