@@ -588,7 +588,10 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
     let satpoint = self.sequence_number_to_satpoint.get(seq_number)?.map(|_entry| {SatPoint::load(*_entry.value())}).unwrap();
 
     let current_owner = if tx.txid() == satpoint.outpoint.txid {
-        Address::from_script(&tx.output[satpoint.outpoint.vout as usize].script_pubkey, self.index.settings.chain().network()).unwrap().to_string()
+        match Address::from_script(&tx.output[satpoint.outpoint.vout as usize].script_pubkey, self.index.settings.chain().network()) {
+          Ok(address) => address.to_string(), 
+          Err(_) =>  "".to_string()
+        }
     }else{
       "".to_string()
     };
