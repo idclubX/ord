@@ -441,6 +441,7 @@ impl<'index> Updater<'index> {
       .collect();
 
     log::info!("new InscriptionUpdater ");
+    let update_ins_start = Instant::now();
     let mut inscription_updater = InscriptionUpdater {
       blessed_inscription_count,
       chain: self.index.settings.chain(),
@@ -578,7 +579,7 @@ impl<'index> Updater<'index> {
       }
     }
 
-    log::info!("indexing inscriptions end");
+    log::info!("indexing inscriptions end cost {} ms",(Instant::now()-update_ins_start).as_millis());
     if index_inscriptions {
       height_to_last_sequence_number
         .insert(&self.height, inscription_updater.next_sequence_number)?;
