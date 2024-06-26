@@ -118,6 +118,7 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
 
       let offset = total_input_value;
 
+      let get_invalue_start = Instant::now();
       // multi-level cache for UTXO set to get to the input amount
       let current_input_value = if let Some(value) = self.value_cache.remove(&tx_in.previous_output)
       {
@@ -135,7 +136,12 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
           )
         })?
       };
-
+      let get_invalue_cost = (Instant::now() - get_invalue_start).as_millis();
+      if get_invalue_cost > 10
+      {
+        log::info!("get input value cost {}",get_invalue_cost);
+      }
+      
       total_input_value += current_input_value;
 
       // go through all inscriptions in this input

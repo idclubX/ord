@@ -440,6 +440,7 @@ impl<'index> Updater<'index> {
       .map(|(index, (_, txid))| (txid.clone(), index))   
       .collect();
 
+    log::info!("new InscriptionUpdater ");
     let mut inscription_updater = InscriptionUpdater {
       blessed_inscription_count,
       chain: self.index.settings.chain(),
@@ -577,6 +578,7 @@ impl<'index> Updater<'index> {
       }
     }
 
+    log::info!("indexing inscriptions end");
     if index_inscriptions {
       height_to_last_sequence_number
         .insert(&self.height, inscription_updater.next_sequence_number)?;
