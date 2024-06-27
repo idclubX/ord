@@ -633,19 +633,19 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
       _ => json!({}),
     };
 
-    let current_inscription : Inscription = self.index.get_transaction(flotsam.inscription_id.txid)?.and_then(|tx| {
-      ParsedEnvelope::from_transaction(&tx, &Some("".to_string()))
-      .into_iter()
-      .nth(flotsam.inscription_id.index as usize)
-      .map(|envelope| envelope.payload)
-    }).unwrap();
+    // let current_inscription : Inscription = self.index.get_transaction(flotsam.inscription_id.txid)?.and_then(|tx| {
+    //   ParsedEnvelope::from_transaction(&tx, &Some("".to_string()))
+    //   .into_iter()
+    //   .nth(flotsam.inscription_id.index as usize)
+    //   .map(|envelope| envelope.payload)
+    // }).unwrap();
 
-    let mut content: String = "".to_owned();
-    let mut content_size: u64 = 0;
-    if let Some(_body) = current_inscription.clone().into_body() {
-      content = general_purpose::STANDARD.encode(&_body);
-      content_size = _body.len() as u64;
-    }
+    // let mut content: String = "".to_owned();
+    // let mut content_size: u64 = 0;
+    // if let Some(_body) = current_inscription.clone().into_body() {
+    //   content = general_purpose::STANDARD.encode(&_body);
+    //   content_size = _body.len() as u64;
+    // }
 
     let (cursed, vindicated, unbound, reinscription) = match origin {
       Origin::New { cursed, vindicated, unbound, reinscription, .. } => (cursed, vindicated, unbound, reinscription),
@@ -686,14 +686,14 @@ impl<'a, 'tx> InscriptionUpdater<'a, 'tx> {
             "vout": satpoint.outpoint.vout
           })
         }),
-        "content_type": current_inscription.content_type(),
-        "content": content,
-        "content_size": content_size,
-        "metadata":  match current_inscription.metadata() {
-          Some(meta) => to_string(&meta)?,
-          _ => "{}".to_owned(),
-        },
-        "metaprotocol": current_inscription.metaprotocol(),
+        // "content_type": current_inscription.content_type(),
+        // "content": content,
+        // "content_size": content_size,
+        // "metadata":  match current_inscription.metadata() {
+        //   Some(meta) => to_string(&meta)?,
+        //   _ => "{}".to_owned(),
+        // },
+        // "metaprotocol": current_inscription.metaprotocol(),
         "old_satpoint": _old_satpoint,
         "out_value":out_value
     });
