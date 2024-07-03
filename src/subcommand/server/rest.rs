@@ -242,19 +242,28 @@ fn _get_inscription(
   index: &Arc<Index>,
   query: query::Inscription,
 ) -> Result<Value, ServerError>{
-  let (api_inscription, tx_out, _) = Index::inscription_info(&index, query)?.ok_or_not_found(|| format!("inscription {query}"))?;
+  let (api_inscription, tx_out, raw_inscription) = Index::inscription_info(&index, query)?.ok_or_not_found(|| format!("inscription {query}"))?;
 
-  let raw_tx = index.get_raw_transaction(api_inscription.id.txid)?;
+  // let raw_tx = index.get_raw_transaction(api_inscription.id.txid)?;
 
-  let current_inscription : Inscription = raw_tx.and_then(|tx| {
-    ParsedEnvelope::from_transaction(&tx, &Some("".to_string()))
-    .into_iter()
-    .nth(api_inscription.id.index as usize)
-    .map(|envelope| envelope.payload)
-  }).unwrap();
+  // let current_inscription : Inscription = raw_tx.and_then(|tx| {
+  //   ParsedEnvelope::from_transaction(&tx, &Some("".to_string()))
+  //   .into_iter()
+  //   .nth(api_inscription.id.index as usize)
+  //   .map(|envelope| envelope.payload)
+  // }).unwrap();
 
+  let matedata = match raw_inscription.metadata() {
+    Some(meta) => match to_string(&meta) {
+      Ok(v) => v,
+      Err(_) => "{}".to_owned(),
+    },
+    _ => "{}".to_owned(),
+  };
+
+  let metaprotocol = raw_inscription.metaprotocol();
   let mut content: String = "".to_owned();
-  if let Some(_body) = current_inscription.clone().into_body() {
+  if let Some(_body) = raw_inscription.body() {
     content = general_purpose::STANDARD.encode(&_body);
   }
 
@@ -281,14 +290,8 @@ fn _get_inscription(
       }),
       "sat": api_inscription.sat,
       "satpoint": api_inscription.satpoint,
-      "metadata": match current_inscription.clone().metadata() {
-        Some(meta) => match to_string(&meta) {
-          Ok(v) => v,
-          Err(_) => "{}".to_owned(),
-        },
-        _ => "{}".to_owned(),
-      },
-      "metaprotocol": current_inscription.metaprotocol(),
+      "metadata": matedata,
+      "metaprotocol": metaprotocol,
       "timestamp": api_inscription.timestamp,
      })
   )
